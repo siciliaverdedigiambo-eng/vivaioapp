@@ -24,7 +24,7 @@
 
   /* ── NAV ── */
   nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 250;
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 5%; background: rgba(255,255,255,0.95);
     backdrop-filter: blur(12px); border-bottom: 1px solid rgba(59,109,17,0.1);
@@ -259,8 +259,10 @@
     padding: 14px 20px;
     font-size: 15px;
     font-weight: 500;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 300;
     display: none;
     box-shadow: 0 2px 12px rgba(0,0,0,0.3);
@@ -672,8 +674,16 @@ async function handleSubmit(e) {
     banner.classList.add('visible');
 
     // Adjust nav top
-    // nav stays fixed, promo is sticky above it
-    document.body.style.paddingTop = '';
+    // Push nav below banner
+    const bh = banner.offsetHeight;
+    document.getElementById('navbar').style.top = bh + 'px';
+    document.body.style.paddingTop = bh + 'px';
+    // Update on resize
+    window.addEventListener('resize', () => {
+      const bh2 = document.getElementById('promo-banner').offsetHeight;
+      document.getElementById('navbar').style.top = bh2 + 'px';
+      document.body.style.paddingTop = bh2 + 'px';
+    });
 
   } catch(e) { console.log('Promo error', e); }
 })();
