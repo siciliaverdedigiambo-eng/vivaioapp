@@ -24,7 +24,7 @@
 
   /* ── NAV ── */
   nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 5%; background: rgba(255,255,255,0.95);
     backdrop-filter: blur(12px); border-bottom: 1px solid rgba(59,109,17,0.1);
@@ -253,63 +253,82 @@
 
   /* ── PROMO BANNER ── */
   .promo-banner {
-    background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: linear-gradient(90deg, #1a1a1a 0%, #111 50%, #1a1a1a 100%);
     color: white;
     text-align: center;
-    padding: 12px 20px;
-    font-size: 14px;
+    padding: 14px 20px;
+    font-size: 15px;
     font-weight: 500;
-    position: relative;
-    z-index: 200;
+    position: sticky;
+    top: 0;
+    z-index: 300;
     display: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
   .promo-banner.visible { display: block; }
   .promo-banner .promo-inner {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
   }
   .promo-badge {
     background: #e74c3c;
     color: white;
-    padding: 3px 10px;
+    padding: 5px 14px;
     border-radius: 20px;
     font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-  .promo-badge.black { background: #e74c3c; }
-  .promo-badge.green { background: var(--green); }
-  .promo-code {
-    background: rgba(255,255,255,0.15);
-    border: 1px dashed rgba(255,255,255,0.4);
-    padding: 3px 12px;
-    border-radius: 6px;
-    font-family: monospace;
-    font-weight: 700;
-    font-size: 14px;
+    font-weight: 800;
     letter-spacing: 1px;
-    cursor: pointer;
-    transition: background 0.2s;
+    text-transform: uppercase;
+    animation: pulse 2s infinite;
   }
-  .promo-code:hover { background: rgba(255,255,255,0.25); }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.75; }
+  }
+  .promo-text-main { font-weight: 600; font-size: 15px; }
+  .promo-code-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px dashed rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .promo-code-wrap:hover { background: rgba(255,255,255,0.18); border-color: white; }
+  .promo-code-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+  .promo-code {
+    font-family: monospace;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: #f9ca24;
+  }
+  .promo-copy-icon { font-size: 14px; opacity: 0.7; }
   .promo-countdown {
-    font-size: 12px;
-    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.06);
+    padding: 4px 12px;
+    border-radius: 20px;
   }
   .promo-copied {
-    font-size: 12px;
+    font-size: 13px;
     color: #2ecc71;
+    font-weight: 600;
     display: none;
   }
   /* Pricing promo override */
   .price-original {
     font-size: 18px;
     text-decoration: line-through;
-    opacity: 0.5;
+    opacity: 0.45;
     font-weight: 400;
     letter-spacing: 0;
   }
@@ -322,10 +341,14 @@
 <div class="promo-banner" id="promo-banner">
   <div class="promo-inner">
     <span class="promo-badge" id="promo-badge">OFFERTA</span>
-    <span id="promo-text">Sconto speciale in corso</span>
-    <span class="promo-code" id="promo-code" onclick="copyCode()" title="Clicca per copiare"></span>
+    <span class="promo-text-main" id="promo-text">Sconto speciale in corso</span>
+    <div class="promo-code-wrap" onclick="copyCode()" title="Clicca per copiare il codice">
+      <span class="promo-code-label">Codice</span>
+      <span class="promo-code" id="promo-code"></span>
+      <span class="promo-copy-icon">📋</span>
+    </div>
     <span class="promo-countdown" id="promo-countdown"></span>
-    <span class="promo-copied" id="promo-copied">✓ Copiato!</span>
+    <span class="promo-copied" id="promo-copied">✅ Copiato!</span>
   </div>
 </div>
 
@@ -649,7 +672,8 @@ async function handleSubmit(e) {
     banner.classList.add('visible');
 
     // Adjust nav top
-    document.getElementById('navbar').style.top = banner.offsetHeight + 'px';
+    // nav stays fixed, promo is sticky above it
+    document.body.style.paddingTop = '';
 
   } catch(e) { console.log('Promo error', e); }
 })();
