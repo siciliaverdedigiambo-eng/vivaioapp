@@ -250,9 +250,85 @@
     .features-grid { grid-template-columns: 1fr; }
     .hero h1 { font-size: 38px; }
   }
+
+  /* ── PROMO BANNER ── */
+  .promo-banner {
+    background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    text-align: center;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    position: relative;
+    z-index: 200;
+    display: none;
+  }
+  .promo-banner.visible { display: block; }
+  .promo-banner .promo-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .promo-badge {
+    background: #e74c3c;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .promo-badge.black { background: #e74c3c; }
+  .promo-badge.green { background: var(--green); }
+  .promo-code {
+    background: rgba(255,255,255,0.15);
+    border: 1px dashed rgba(255,255,255,0.4);
+    padding: 3px 12px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .promo-code:hover { background: rgba(255,255,255,0.25); }
+  .promo-countdown {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .promo-copied {
+    font-size: 12px;
+    color: #2ecc71;
+    display: none;
+  }
+  /* Pricing promo override */
+  .price-original {
+    font-size: 18px;
+    text-decoration: line-through;
+    opacity: 0.5;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .price-discounted { color: #2ecc71; }
 </style>
 </head>
 <body>
+
+<!-- PROMO BANNER -->
+<div class="promo-banner" id="promo-banner">
+  <div class="promo-inner">
+    <span class="promo-badge" id="promo-badge">OFFERTA</span>
+    <span id="promo-text">Sconto speciale in corso</span>
+    <span class="promo-code" id="promo-code" onclick="copyCode()" title="Clicca per copiare"></span>
+    <span class="promo-countdown" id="promo-countdown"></span>
+    <span class="promo-copied" id="promo-copied">✓ Copiato!</span>
+  </div>
+</div>
+
 
 <!-- NAV -->
 <nav id="navbar">
@@ -522,6 +598,85 @@ async function handleSubmit(e) {
     btn.disabled = false;
   }
 }
+
+// ── PROMO BANNER ──
+(async function() {
+  try {
+    const now = new Date().toISOString().slice(0,10);
+    const url = 'https://ikxhdmxjvodcyypnmsuh.supabase.co/rest/v1/codici_sconto?attivo=eq.true&or=(data_inizio.is.null,data_inizio.lte.' + now + ')&or=(data_fine.is.null,data_fine.gte.' + now + ')&order=createdAt.desc&limit=1';
+    const r = await fetch(url, {
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlreGhkbXhqdm9kY3l5cG5tc3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3ODk3MTYsImV4cCI6MjA5NTM2NTcxNn0.KEtZDskCrvmE4K2EOzqYXRq12bvligwhRLnoeeR6X5Q',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlreGhkbXhqdm9kY3l5cG5tc3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3ODk3MTYsImV4cCI6MjA5NTM2NTcxNn0.KEtZDskCrvmE4K2EOzqYXRq12bvligwhRLnoeeR6X5Q'
+      }
+    });
+    const list = await r.json();
+    if (!list || !list.length) return;
+
+    const promo = list[0];
+    // Check usage limit
+    if (promo.uso_max && promo.uso_count >= promo.uso_max) return;
+
+    const banner  = document.getElementById('promo-banner');
+    const badge   = document.getElementById('promo-badge');
+    const text    = document.getElementById('promo-text');
+    const code    = document.getElementById('promo-code');
+    const countdown = document.getElementById('promo-countdown');
+
+    const sconto = promo.tipo === 'percentuale'
+      ? promo.valore + '% di sconto'
+      : '€' + promo.valore + ' di sconto';
+
+    text.textContent = (promo.descrizione || 'Offerta speciale') + ' — ' + sconto;
+    code.textContent = promo.codice;
+    badge.textContent = promo.descrizione ? promo.descrizione.split(' ')[0].toUpperCase() : 'OFFERTA';
+
+    // Countdown if data_fine
+    if (promo.data_fine) {
+      const fine = new Date(promo.data_fine);
+      const diff = fine - new Date();
+      const days = Math.ceil(diff / (1000*60*60*24));
+      if (days > 0) {
+        countdown.textContent = '⏳ Ancora ' + days + ' giorn' + (days===1?'o':'i');
+      }
+    }
+
+    // Update pricing section with discounted prices
+    if (promo.tipo === 'percentuale') {
+      updatePrices(promo.valore);
+    }
+
+    banner.classList.add('visible');
+
+    // Adjust nav top
+    document.getElementById('navbar').style.top = banner.offsetHeight + 'px';
+
+  } catch(e) { console.log('Promo error', e); }
+})();
+
+function copyCode() {
+  const code = document.getElementById('promo-code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const copied = document.getElementById('promo-copied');
+    copied.style.display = 'inline';
+    setTimeout(() => copied.style.display = 'none', 2000);
+  });
+}
+
+function updatePrices(perc) {
+  const prezzi = [
+    { sel: '.pricing-card:nth-child(1) .pricing-price', orig: 39 },
+    { sel: '.pricing-card:nth-child(2) .pricing-price', orig: 79 },
+    { sel: '.pricing-card:nth-child(3) .pricing-price', orig: 149 }
+  ];
+  prezzi.forEach(p => {
+    const el = document.querySelector(p.sel);
+    if (!el) return;
+    const discounted = Math.round(p.orig * (1 - perc/100));
+    el.innerHTML = '<span class="price-original">€' + p.orig + '</span> <span class="price-discounted">€' + discounted + '</span><span>/mese</span>';
+  });
+}
+
 </script>
 </body>
 </html>
